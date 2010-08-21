@@ -28,6 +28,7 @@ class Tommy:
 		]
 
 		self.favouriteCustomer = [] # List of people who have accepted the lord Tommy Wiseau into their heart
+		self.memory = ['' for i in range(MARKOV_LENGTH)] # Store the last few words analysed
 
 		# Link words together for the Markov Chain algorithm
 		text = open('phrases.txt','r')
@@ -35,13 +36,20 @@ class Tommy:
 		self.words = {}
 		self.analyseText(text)
 
+	def remember(self,token):
+		'''Remember the word'''
+		# add the token to the dictionary, indexed by the tokens that came before it
+		self.words.setdefault(tuple(self.memory),[]).append(token)
+
+		# rotate the sequence of words used as the dictionary key
+		self.memory = self.memory[1:]
+		self.memory.append(token)
+
+
 	def analyseText(self,text):
-
-		# Start a new sequence of words to use as the key
-		words = ['' for i in range(MARKOV_LENGTH)]
-
+		'''Analyse a text file'''
 		for line in text:
-			words = self.analyseLine(line,words)
+			words = self.analyseLine(line)
 
 	def parseSentence(self,sentence):
 		'''# Parse a sentence into tokens.
@@ -75,23 +83,15 @@ or an empty string, indicating the end of a sentence'''
 
 		return tuple(tokens)
 
-	def analyseLine(self,line,prevWords):
-		'''Analyse a line of the input text. It is assumed that sentences are not split up over multiple lines. Returns the last few words after processing the line.'''
+	def analyseLine(self,line):
+		'''Analyse a line of the input text. It is assumed that sentences are not split up over multiple lines.'''
 
 		 # reset the previous words list after encountering an empty line
-		if not line.strip(): return ['' for i in range(MARKOV_LENGTH)]
-
-		words = prevWords
+		if not line.strip():
+			self.memory = ['' for i in range(MARKOV_LENGTH)]
 
 		for token in self.parseSentence(line):
-			# add the token to the dictionary, indexed by the tokens that came before it
-			self.words.setdefault(tuple(words),[]).append(token)
-
-			# rotate the sequence of words used as the dictionary key
-			words = words[1:]
-			words.append(token)
-
-		return words
+			self.remember(token)
 
 	def chain(self, message):
 		'''Pick a random response to the message'''
