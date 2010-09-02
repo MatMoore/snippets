@@ -13,10 +13,27 @@ def punctuate(words):
 		result += i
 	return string.upper(result)
 
-class Tommy:
+class Tommy(object):
 
-	def __init__(self):
-		self.nouns = ('Mark', 'Johnny', 'Lisa','Denny','doggy', 'girl', 'princess')
+	@property
+	def name(self):
+		return self._name
+	
+	@name.setter
+	def name(self,value=None):
+		self._name = value
+		self.nickRegex = re.compile(value,flags=re.IGNORECASE)
+
+	def __init__(self,name='Tommy Wiseau',filenames=('phrases.txt',)):
+		object.__init__(self)
+		self.name = name
+
+		# Words which could be substituted for usernames
+		self.nouns = ('Mark', 'Johnny','Tommy Wiseau','Tommy','Lisa','Denny','doggy', 'girl', 'princess')
+		nameRegex = '|'.join(self.nouns)
+		self.nameRegex = re.compile(nameRegex,flags=re.IGNORECASE)
+
+		# Response which match a specific pattern
 		self.responses = [
 			('^how was','Oh pretty good. We got a new client... at the bank. We make a lot of money.'),
 			('^what .+','I can not tell you, its confidential.'),
@@ -28,13 +45,17 @@ class Tommy:
 		]
 
 		self.favouriteCustomer = [] # List of people who have accepted the lord Tommy Wiseau into their heart
-		self.memory = ['' for i in range(MARKOV_LENGTH)] # Store the last few words analysed
 
 		# Link words together for the Markov Chain algorithm
-		text = open('phrases.txt','r')
-
+		self.memory = ['' for i in range(MARKOV_LENGTH)] # Store the last few words analysed
 		self.words = {}
-		self.analyseText(text)
+
+		for filename in filenames:
+			text = open(filename,'r')
+			self.analyseText(text)
+		log = open('chatlog.log','r')
+		self.analyseText(log)
+		self.log = 'chatlog.log'
 
 	def remember(self,token):
 		'''Remember the word'''
@@ -96,19 +117,28 @@ or an empty string, indicating the end of a sentence'''
 	def chain(self, message):
 		'''Pick a random response to the message'''
 		response = []
+
 		while True:
-			word = random.choice(self.words[message])
+			possibilities = self.words[message]
+
+			# If theres only one choice, sometimes combine the response with another one
+			if response and len(possibilities) == 1 and possibilities[0] and random.random()*100 < MIXUP_PERCENT:
+				return response + self.randomChain(start=False)
+
+			word = random.choice(possibilities)
 			response.append(word)
 			if not word: #empty strings mark the end of sentences
 				return response
 			message = tuple(list(message[1:])+[word])
 
-	def randomChain(self):
+	def randomChain(self,start=True):
 		'''Pick a random response'''
 		keys = self.words.keys()
 		while True:
 			key = random.choice(keys)
-			if key[-1] in ('.','','!','?'):
+
+			# Only accept the end of a sentence as a key
+			if (key[-1] in ('.','','!','?') and start) or (key[-1] not in ('.','','!','?') and not start):
 				return self.chain(key)
 
 	def mangledResponse(self,message,name='Mark'):
@@ -142,22 +172,37 @@ or an empty string, indicating the end of a sentence'''
 		return None
 
 	def greet(self,name):
-		greetings = ['hi '+name, 'oh hi '+name]
-		return random.choice(greetings)
+		if name.lower() == 'stealthcopter':
+			return 'BOOOO'
+
+		greetings = [('hi',name), ('oh', 'hi', name)]
+		return punctuate(random.choice(greetings))
 	
 	def sayBye(self,name):
-		farewells = ['bye bye', 'bye '+name]
-		return random.choice(farewells)
+		farewells = [('bye', 'bye'), ('bye',name)]
+		return punctuate(random.choice(farewells))
 
-	def respond(self, name, message):
+	def respond(self, name, message, mustRespond=False):
+		if name != self.name:
+			self.analyseLine(message)
+			with open(self.log, 'a') as f:
+				f.write(message+'\n')
+
 		keyword = self.keywordResponse(name, message)
 		if keyword:
 			return keyword
-		if random.random()*100 < RESPOND_PERCENT:
+
+		# Always respond to your own name
+		if mustRespond or random.random()*100 < RESPOND_PERCENT or (name != self.name and message.lower().find(self.name.lower()) != -1):
 			if random.random()*100 < SPOON_PERCENT:
 				return self.spoon()
 			else:
-				return self.mangledResponse(self,message,name)
+				response = self.mangledResponse(message,name)
+
+				# Replace names with the name of whoever spoke last
+				response = re.sub(self.nickRegex,name.upper(),response) # substitute Nick
+				response = re.sub(self.nameRegex,name.upper(),response) # substitute other names
+				return response
 
 		return None
 
@@ -174,12 +219,22 @@ or an empty string, indicating the end of a sentence'''
 |____________|
 '''
 
-MARKOV_LENGTH = 3
-RESPOND_PERCENT = 20
-SPOON_PERCENT = 5
+MARKOV_LENGTH = 2
+RESPOND_PERCENT = 10
+SPOON_PERCENT = 3
+MIXUP_PERCENT = 5
 
 if __name__ == '__main__':
+	RESPOND_PERCENT = 100
+
 	tommy = Tommy()
-	print tommy.words
-	print tommy.mangledResponse('you are just chicken')
-	print tommy.mangledResponse('!!!!')
+	try:
+		while True:
+			i = raw_input('> ')
+			o = tommy.respond('Mark',i)
+			print o
+	except EOFError:
+			pass
+#	print tommy.words
+#	print tommy.mangledResponse('you are just chicken')
+#	print tommy.mangledResponse('!!!!')
