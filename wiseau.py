@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# coding=UTF-8
 import random
 import re
 import string
@@ -24,7 +26,7 @@ class Tommy(object):
 		self._name = value
 		self.nickRegex = re.compile(value,flags=re.IGNORECASE)
 
-	def __init__(self,name='Tommy Wiseau',filenames=('phrases.txt',)):
+	def __init__(self,name='Tommy Wiseau',filenames=('phrases.txt',),):
 		object.__init__(self)
 		self.name = name
 
@@ -172,14 +174,14 @@ or an empty string, indicating the end of a sentence'''
 		return None
 
 	def greet(self,name):
+		greetings = (('hi',name), ('oh', 'hi', name))
 		if name.lower() == 'stealthcopter':
 			return 'BOOOO'
 
-		greetings = [('hi',name), ('oh', 'hi', name)]
 		return punctuate(random.choice(greetings))
 	
 	def sayBye(self,name):
-		farewells = [('bye', 'bye'), ('bye',name)]
+		farewells=(('bye', 'bye'), ('bye',name))
 		return punctuate(random.choice(farewells))
 
 	def respond(self, name, message, mustRespond=False):
@@ -219,15 +221,30 @@ or an empty string, indicating the end of a sentence'''
 |____________|
 '''
 
+class SenorWiseau(Tommy):
+	def __init__(self,name='Tommy Wiseau'):
+		Tommy.__init__(self,name,filenames=('spanish.txt',))
+
+	def greet(self,name):
+		greetings = (('Hola',u'señor',name), ('oh', 'hola',u'señor', name))
+
+		return punctuate(random.choice(greetings))
+	
+	def sayBye(self,name):
+		farewells=(('adios',u'señor',name))
+		return punctuate(random.choice(farewells))
+
+
 MARKOV_LENGTH = 2
-RESPOND_PERCENT = 10
+RESPOND_PERCENT = 40
 SPOON_PERCENT = 3
-MIXUP_PERCENT = 5
+MIXUP_PERCENT = 0
 
 if __name__ == '__main__':
 	RESPOND_PERCENT = 100
 
-	tommy = Tommy()
+	tommy = SenorWiseau()
+	print tommy.greet('User')
 	try:
 		while True:
 			i = raw_input('> ')
