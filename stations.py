@@ -325,105 +325,129 @@ stations = [
   "Woodside Park"
 ]
 
-stations = [
-    'abc',
-    'bcd',
-    'cde',
-    'def',
-    'efg',
-    'fgh',
-    'ghi',
-    'hia',
-    'iab'
-]
-
 def normalise(station):
   "Lowercase everything and filter out non-letters"
   return frozenset((i.lower() for i in station if i in string.letters))
 
-stations = [normalise(station) for station in stations]
-alphabet = list(reduce(lambda a, b: set(a) | set(b), stations))
-NUM_LETTERS = len(alphabet)
-A_NUM = ord('a')
-MAX = 2**NUM_LETTERS - 1 # Encodes the set of all letters in the alphabet
 INFINITY = 300  # Sentinel value for an infinite number of stations
 
-def int_to_set(n):
-  "Iterate over all letters encoded in n"
-  for letter in xrange(NUM_LETTERS):
-    if (1 << letter) & n:
-      yield alphabet[letter]
+A_NUM = ord('a')
+class Alphabets(object):
+  """Represents all possible subsets of the alphabet contained
+  in a list of words.
+  There are 2^n subsets, which can each be identified by an integer."""
+  def __init__(self, stations):
+    self.alphabet = sorted((reduce(lambda a, b: set(a) | set(b), stations)))
+    self.size = len(self.alphabet) # size of the full alphabet
+    self.combis = 2 ** self.size   # number of combinations
+    self.maxint = self.combis - 1
 
-def set_to_int(s):
-  "Encode a subset of letters as an integer"
-  return sum((1 << (ord(i)-A_NUM) for i in s))
+  def _int_to_set(self, n):
+    "Iterate over all letters encoded in n"
+    for letter in xrange(self.size):
+      if (1 << letter) & n:
+        yield self.alphabet[letter]
 
-def solve(results):
-  """
-  Calculate the number of stations in the solution by building up intermediate
-  solutions that use smaller alphabets.
+  def int_to_set(self, n):
+    "Set of letters encoded in n"
+    return frozenset(self._int_to_set(n))
 
-  The solution for an alphabet A is 1 station more than the solution
-  to A-chars(s), for all stations s.
-  """
-  # Every subset of letters
-  for i in xrange(0, MAX):
-    existing = frozenset(int_to_set(i))
-    existing_count = results[i]
-    # Every choice of next station
-    for station in stations:
-      if station - existing: # each station must contribute new letters
-        new = set_to_int(station | existing)
+  def set_to_int(self, s):
+    "Encode a subset of letters as an integer"
+    # TODO
+    # THIS ASSUMES ALPHABET IS CONSECUTIVE AND BEGINS WITH A!!!
+    return sum((1 << (ord(i)-A_NUM) for i in s))
 
-        if station > existing:
-          # The current station provides all letters in the current subset
-          new_count = 1
-        elif existing_count:
-          # Some other words got us to the current subset, and now we can extend it
-          new_count = existing_count + 1
-        else:
-          # We haven't actually found the "existing" subset, how embarassing!
-          continue
+  def __iter__(self):
+    for i in xrange(self.combis):
+      yield self.int_to_set(i)
 
-        # If we've already got to this new subset with less stations,
-        # then this set is useless
-        if results[new] and results[new] < new_count:
-          continue
+class Solver(object):
+  def __init__(self, words):
+    words = [normalise(word) for word in words]
+    self.words = words
+    self.alphabets = Alphabets(words)
+    self.results = array.array('B', (0 for i in xrange(self.alphabets.combis)))
 
-        results[new] = new_count
+  def solve(self):
+    """
+    Calculate the number of stations in the solution by building up intermediate
+    solutions that use smaller alphabets.
 
-        if new == MAX:
-          # Got em all
-          return results[new]
+    The solution for an alphabet A is 1 station more than the solution
+    to A-chars(s), for all stations s.
+    """
+    # Every subset of letters
+    for i, existing in enumerate(self.alphabets):
+      existing_count = self.results[i]
+      # Every choice of next station
+      for station in self.words:
+        if station - existing: # each station must contribute new letters
+          new = self.alphabets.set_to_int(station | existing)
 
-def rebuild(results, last_seen=MAX):
-  """
-  Work out the stations in the solution by examining the results array
-  """
-  last_result = results[last_seen]
-  alphabet = set(int_to_set(last_seen))
-  print alphabet, last_result, last_seen
-  for i in xrange(last_seen, 0, -1):
-    for station in stations:
+          if station > existing:
+            # The current station provides all letters in the current subset
+            new_count = 1
+          elif existing_count:
+            # Some other words got us the current subset, and now we can extend
+            new_count = existing_count + 1
+          else:
+            # We haven't actually found the "existing" subset, how embarassing!
+            continue
+
+          # If we've already got to this new subset with less stations,
+          # then this set is useless
+          if self.results[new] and self.results[new] < new_count:
+            continue
+
+          self.results[new] = new_count
+
+          if new == self.alphabets.maxint:
+            # Got em all
+            return self.results[new]
+
+  def rebuild(self, last_seen=None):
+    """
+    Work out the stations in the solution by examining the results array
+    """
+    last_seen = last_seen or self.alphabets.maxint
+    last_result = self.results[last_seen]
+    alphabet = self.alphabets.int_to_set(last_seen)
+    #print alphabet, last_result, last_seen
+    for station in self.words:
       # Take this station as the last step in a valid solution
       # If it is in the optimal solution, then the result excluding
       # this station should be one word less than the optimal result
       # we found.
-      new = set_to_int(alphabet - station)
-      new_result = results[new]
-      #print alphabet - station, new_result
+      new = self.alphabets.set_to_int(alphabet - station)
+      new_result = self.results[new]
+      #if last_seen == 455:
+        #print station, alphabet-station, new_result
       if last_result - new_result == 1:
         yield station
-        for other in rebuild(results, new):
+        #print alphabet - station
+        #print new
+        for other in self.rebuild(new):
           yield other
         return
 
 if __name__ == '__main__':
-  results = array.array('B', (0 for i in xrange(2**NUM_LETTERS)))
+  stations = [
+      'abc',
+      'bcd',
+      'cde',
+      'def',
+      'efg',
+      'fgh',
+      'ghi',
+      'hia',
+      'iab'
+  ]
 
+  solver = Solver(stations)
   print '-' * 80
-  print solve(results)
+  print solver.solve()
   print '-' * 80
 
-  for i in rebuild(results):
+  for i in solver.rebuild():
     print i
