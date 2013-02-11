@@ -325,19 +325,32 @@ stations = [
   "Woodside Park"
 ]
 
+stations = [
+    'abc',
+    'bcd',
+    'cde',
+    'def',
+    'efg',
+    'fgh',
+    'ghi',
+    'hia',
+    'iab'
+]
+
 def normalise(station):
   "Lowercase everything and filter out non-letters"
   return frozenset((i.lower() for i in station if i in string.letters))
 
-alphabet = string.lowercase
 stations = [normalise(station) for station in stations]
+alphabet = list(reduce(lambda a, b: set(a) | set(b), stations))
+NUM_LETTERS = len(alphabet)
 A_NUM = ord('a')
-MAX = 2**26 - 1 # Encodes the set of all letters in the alphabet
+MAX = 2**NUM_LETTERS - 1 # Encodes the set of all letters in the alphabet
 INFINITY = 300  # Sentinel value for an infinite number of stations
 
 def int_to_set(n):
   "Iterate over all letters encoded in n"
-  for letter in xrange(26):
+  for letter in xrange(NUM_LETTERS):
     if (1 << letter) & n:
       yield alphabet[letter]
 
@@ -355,26 +368,42 @@ def solve(results):
   """
   # Every subset of letters
   for i in xrange(0, MAX):
-    print i
     existing = frozenset(int_to_set(i))
+    existing_count = results[i]
     # Every choice of next station
     for station in stations:
       if station - existing: # each station must contribute new letters
         new = set_to_int(station | existing)
 
-        # If we've got to this subset by a shorter route, keep that result
-        results[new] = min((results[new] or INFINITY), results[i] + 1)
-      if new == MAX:
-        # Got em all
-        return results[new]
+        if station > existing:
+          # The current station provides all letters in the current subset
+          new_count = 1
+        elif existing_count:
+          # Some other words got us to the current subset, and now we can extend it
+          new_count = existing_count + 1
+        else:
+          # We haven't actually found the "existing" subset, how embarassing!
+          continue
+
+        # If we've already got to this new subset with less stations,
+        # then this set is useless
+        if results[new] and results[new] < new_count:
+          continue
+
+        results[new] = new_count
+
+        if new == MAX:
+          # Got em all
+          return results[new]
 
 def rebuild(results, last_seen=MAX):
   """
   Work out the stations in the solution by examining the results array
   """
   last_result = results[last_seen]
-  alphabet = int_to_set(last_result)
-  for i in xrange(last_seen, 0):
+  alphabet = set(int_to_set(last_seen))
+  print alphabet, last_result, last_seen
+  for i in xrange(last_seen, 0, -1):
     for station in stations:
       # Take this station as the last step in a valid solution
       # If it is in the optimal solution, then the result excluding
@@ -382,16 +411,19 @@ def rebuild(results, last_seen=MAX):
       # we found.
       new = set_to_int(alphabet - station)
       new_result = results[new]
+      #print alphabet - station, new_result
       if last_result - new_result == 1:
         yield station
-        for other in rebuild(new):
+        for other in rebuild(results, new):
           yield other
         return
 
 if __name__ == '__main__':
-  results = array.array('B', (0 for i in xrange(2**26)))
+  results = array.array('B', (0 for i in xrange(2**NUM_LETTERS)))
 
+  print '-' * 80
   print solve(results)
+  print '-' * 80
 
   for i in rebuild(results):
     print i
