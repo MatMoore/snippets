@@ -1,6 +1,6 @@
 """
-What is the least amount of London tube stations you need so that
-the letters in their names cover the entire alphabet?
+What is the least amount of London tube stations you need to visit
+so that the letters in their names cover the entire alphabet?
 """
 import string
 import array
@@ -409,11 +409,13 @@ class Solver(object):
   def rebuild(self, last_seen=None):
     """
     Work out the stations in the solution by examining the results array
+
+    TODO: return the original words, rather than the set form. Also get it to work
     """
     last_seen = last_seen or self.alphabets.maxint
     last_result = self.results[last_seen]
     alphabet = self.alphabets.int_to_set(last_seen)
-    #print alphabet, last_result, last_seen
+    print alphabet, last_result, last_seen
     for station in self.words:
       # Take this station as the last step in a valid solution
       # If it is in the optimal solution, then the result excluding
@@ -421,9 +423,10 @@ class Solver(object):
       # we found.
       new = self.alphabets.set_to_int(alphabet - station)
       new_result = self.results[new]
-      #if last_seen == 455:
-        #print station, alphabet-station, new_result
-      if last_result - new_result == 1:
+      if new == 0:
+        yield station
+        return
+      if last_result - new_result == 1 and new > 0:
         yield station
         #print alphabet - station
         #print new
@@ -446,8 +449,8 @@ if __name__ == '__main__':
 
   solver = Solver(stations)
   print '-' * 80
-  print solver.solve()
+  print 'Solved in', solver.solve(), 'steps:'
   print '-' * 80
 
   for i in solver.rebuild():
-    print i
+    print '  * ', ''.join(i)
