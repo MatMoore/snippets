@@ -329,8 +329,6 @@ def normalise(station):
   "Lowercase everything and filter out non-letters"
   return frozenset((i.lower() for i in station if i in string.letters))
 
-INFINITY = 300  # Sentinel value for an infinite number of stations
-
 A_NUM = ord('a')
 class Alphabets(object):
   """Represents all possible subsets of the alphabet contained
