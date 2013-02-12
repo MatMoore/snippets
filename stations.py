@@ -365,7 +365,6 @@ class Solver(object):
   def __init__(self, words):
     self.original_words = {normalise(word) : word for word in words}
     self.words = list(self.original_words.keys())
-    self.indices = {word: i for i, word in enumerate(self.words)}
     self.alphabets = Alphabets(self.words)
     self.results = array.array('B', (0 for i in range(self.alphabets.combis)))
     self.choices = array.array('I', (0 for i in range(self.alphabets.combis)))
@@ -382,7 +381,7 @@ class Solver(object):
     for i, existing in enumerate(self.alphabets):
       existing_count = self.results[i]
       # Every choice of next station
-      for station in self.words:
+      for station_index, station in enumerate(self.words):
         if station - existing: # each station must contribute new letters
           new = self.alphabets.set_to_int(station | existing)
 
@@ -402,7 +401,7 @@ class Solver(object):
             continue
 
           self.results[new] = new_count
-          self.choices[new] = self.indices[station]
+          self.choices[new] = station_index
 
           if new == self.alphabets.maxint:
             # Got em all
