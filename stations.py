@@ -362,9 +362,9 @@ class Alphabets(object):
 
 class Solver(object):
   def __init__(self, words):
-    words = [normalise(word) for word in words]
-    self.words = words
-    self.alphabets = Alphabets(words)
+    self.original_words = {normalise(word) : word for word in words}
+    self.words = self.original_words.keys()
+    self.alphabets = Alphabets(self.words)
     self.results = array.array('B', (0 for i in xrange(self.alphabets.combis)))
     self.choices = array.array('L', (0 for i in xrange(self.alphabets.combis)))
 
@@ -414,12 +414,14 @@ class Solver(object):
     """
     last_seen = last_seen or self.alphabets.maxint
     alphabet = self.alphabets.int_to_set(last_seen)
+    solution = set()
     while last_seen:
       last_choice = self.choices[last_seen]
       station = self.alphabets.int_to_set(last_choice)
-      yield station
+      solution.add(self.original_words[station])
       alphabet -= station
       last_seen -= last_choice
+    return solution
 
 if __name__ == '__main__':
   stations = [
