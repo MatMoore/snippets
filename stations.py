@@ -4,6 +4,7 @@ so that the letters in their names cover the entire alphabet?
 """
 import string
 import array
+from functools import reduce
 
 stations = [
   "Acton Central",
@@ -327,7 +328,7 @@ stations = [
 
 def normalise(station):
   "Lowercase everything and filter out non-letters"
-  return frozenset((i.lower() for i in station if i in string.letters))
+  return frozenset((i.lower() for i in station if i in string.ascii_letters))
 
 A_NUM = ord('a')
 class Alphabets(object):
@@ -342,7 +343,7 @@ class Alphabets(object):
 
   def _int_to_set(self, n):
     "Iterate over all letters encoded in n"
-    for letter in xrange(self.size):
+    for letter in range(self.size):
       if (1 << letter) & n:
         yield self.alphabet[letter]
 
@@ -357,16 +358,16 @@ class Alphabets(object):
     return sum((1 << (ord(i)-A_NUM) for i in s))
 
   def __iter__(self):
-    for i in xrange(self.combis):
+    for i in range(self.combis):
       yield self.int_to_set(i)
 
 class Solver(object):
   def __init__(self, words):
     self.original_words = {normalise(word) : word for word in words}
-    self.words = self.original_words.keys()
+    self.words = list(self.original_words.keys())
     self.alphabets = Alphabets(self.words)
-    self.results = array.array('B', (0 for i in xrange(self.alphabets.combis)))
-    self.choices = array.array('L', (0 for i in xrange(self.alphabets.combis)))
+    self.results = array.array('B', (0 for i in range(self.alphabets.combis)))
+    self.choices = array.array('L', (0 for i in range(self.alphabets.combis)))
 
   def solve(self):
     """
@@ -437,9 +438,9 @@ if __name__ == '__main__':
   ]
 
   solver = Solver(stations)
-  print '-' * 80
-  print 'Solved in', solver.solve(), 'steps:'
-  print '-' * 80
+  print('-' * 80)
+  print('Solved in', solver.solve(), 'steps:')
+  print('-' * 80)
 
   for i in solver.rebuild():
-    print '  * ', ''.join(i)
+    print('  * ', ''.join(i))
