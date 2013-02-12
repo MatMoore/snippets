@@ -358,6 +358,7 @@ class Alphabets(object):
     return sum((1 << (ord(i)-A_NUM) for i in s))
 
   def __iter__(self):
+    # TODO speed this up
     for i in range(self.combis):
       yield self.int_to_set(i)
 
@@ -410,8 +411,6 @@ class Solver(object):
   def rebuild(self, last_seen=None):
     """
     Work out the stations in the solution by examining the results array
-
-    TODO: return the original words, rather than the set form. Also get it to work
     """
     last_seen = last_seen or self.alphabets.maxint
     alphabet = self.alphabets.int_to_set(last_seen)
