@@ -365,9 +365,10 @@ class Solver(object):
   def __init__(self, words):
     self.original_words = {normalise(word) : word for word in words}
     self.words = list(self.original_words.keys())
+    self.indices = {word: i for i, word in enumerate(self.words)}
     self.alphabets = Alphabets(self.words)
     self.results = array.array('B', (0 for i in range(self.alphabets.combis)))
-    self.choices = array.array('L', (0 for i in range(self.alphabets.combis)))
+    self.choices = array.array('I', (0 for i in range(self.alphabets.combis)))
 
   def solve(self):
     """
@@ -401,7 +402,7 @@ class Solver(object):
             continue
 
           self.results[new] = new_count
-          self.choices[new] = self.alphabets.set_to_int(station)
+          self.choices[new] = self.indices[station]
 
           if new == self.alphabets.maxint:
             # Got em all
@@ -418,25 +419,13 @@ class Solver(object):
     solution = set()
     while last_seen:
       last_choice = self.choices[last_seen]
-      station = self.alphabets.int_to_set(last_choice)
+      station = self.words[last_choice]
       solution.add(self.original_words[station])
       alphabet -= station
-      last_seen -= last_choice
+      last_seen = self.alphabets.set_to_int(alphabet)
     return solution
 
 if __name__ == '__main__':
-  stations = [
-      'abc',
-      'bcd',
-      'cde',
-      'def',
-      'efg',
-      'fgh',
-      'ghi',
-      'hia',
-      'iab'
-  ]
-
   solver = Solver(stations)
   print('-' * 80)
   print('Solved in', solver.solve(), 'steps:')
