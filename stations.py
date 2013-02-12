@@ -366,6 +366,7 @@ class Solver(object):
     self.words = words
     self.alphabets = Alphabets(words)
     self.results = array.array('B', (0 for i in xrange(self.alphabets.combis)))
+    self.choices = array.array('L', (0 for i in xrange(self.alphabets.combis)))
 
   def solve(self):
     """
@@ -399,6 +400,7 @@ class Solver(object):
             continue
 
           self.results[new] = new_count
+          self.choices[new] = self.alphabets.set_to_int(station)
 
           if new == self.alphabets.maxint:
             # Got em all
@@ -411,26 +413,13 @@ class Solver(object):
     TODO: return the original words, rather than the set form. Also get it to work
     """
     last_seen = last_seen or self.alphabets.maxint
-    last_result = self.results[last_seen]
     alphabet = self.alphabets.int_to_set(last_seen)
-    print alphabet, last_result, last_seen
-    for station in self.words:
-      # Take this station as the last step in a valid solution
-      # If it is in the optimal solution, then the result excluding
-      # this station should be one word less than the optimal result
-      # we found.
-      new = self.alphabets.set_to_int(alphabet - station)
-      new_result = self.results[new]
-      if new == 0:
-        yield station
-        return
-      if last_result - new_result == 1 and new > 0:
-        yield station
-        #print alphabet - station
-        #print new
-        for other in self.rebuild(new):
-          yield other
-        return
+    while last_seen:
+      last_choice = self.choices[last_seen]
+      station = self.alphabets.int_to_set(last_choice)
+      yield station
+      alphabet -= station
+      last_seen -= last_choice
 
 if __name__ == '__main__':
   stations = [
