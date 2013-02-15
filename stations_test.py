@@ -34,6 +34,12 @@ def test_convert_back():
     s = solver.alphabets.int_to_set(i)
     assert solver.alphabets.set_to_int(s) == i
 
+def test_convert_back_unordered():
+  solver = stations.Solver(['a', 'c', 'e'])
+  for i in range(2**3):
+    s = solver.alphabets.int_to_set(i)
+    assert solver.alphabets.set_to_int(s) == i
+
 def test_cases():
   yield check_solution, shifted, set(('abc', 'def', 'ghi'))
   yield check_solution, redundancies, set(('abc', 'def', 'ghi'))
