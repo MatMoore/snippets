@@ -353,9 +353,11 @@ class Alphabets(object):
 
   def set_to_int(self, s):
     "Encode a subset of letters as an integer"
-    # TODO
-    # THIS ASSUMES ALPHABET IS CONSECUTIVE AND BEGINS WITH A!!!
-    return sum((1 << (ord(i)-A_NUM) for i in s))
+    total = 0
+    for i, letter in enumerate(self.alphabet):
+      if letter in s:
+        total |= 1 << i
+    return total
 
   def __iter__(self):
     # TODO speed this up
