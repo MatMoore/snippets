@@ -57,3 +57,10 @@ def test_cases():
       'cdg',
       'eh'
   ], set(('abf', 'cdg', 'eh'))
+
+  yield check_solution, [
+      'ab',
+      'abf',
+      'cdg',
+      'edh'
+  ], set(('abf', 'cdg', 'edh'))

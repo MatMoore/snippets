@@ -368,6 +368,7 @@ class Solver(object):
     self.encoded_words = [self.alphabets.encode(word) for word in nwords]
     self.results = array.array('B', (0 for i in range(self.alphabets.combis)))
     self.choices = array.array('I', (0 for i in range(self.alphabets.combis)))
+    self.removals = array.array('I', (0 for i in range(self.alphabets.combis)))
 
   def decode_word(self, encoded_word):
     "Returns the original word, before normalisation"
@@ -408,6 +409,7 @@ class Solver(object):
         self.results[new_alphabet] = new_count
 
         # This is stupid, should change it to be the new letters only
+        self.removals[new_alphabet] = new_alphabet - encoded_alphabet if new_count > 1 else new_alphabet
         self.choices[new_alphabet] = encoded_word
 
         if new_alphabet == self.alphabets.maxint:
@@ -422,8 +424,9 @@ class Solver(object):
     solution = set()
     while last_seen:
       last_choice = self.choices[last_seen]
+      removal = self.removals[last_seen]
       solution.add(last_choice)
-      last_seen -= last_choice
+      last_seen -= removal
     return {self.decode_word(i) for i in solution}
 
 if __name__ == '__main__':
