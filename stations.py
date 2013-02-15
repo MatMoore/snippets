@@ -372,6 +372,10 @@ class Solver(object):
     self.results = array.array('B', (0 for i in range(self.alphabets.combis)))
     self.choices = array.array('I', (0 for i in range(self.alphabets.combis)))
 
+    self.encoded_words = []
+    for word in self.words:
+      self.encoded_words.append(self.alphabets.set_to_int(word))
+
   def solve(self):
     """
     Calculate the number of stations in the solution by building up intermediate
@@ -380,50 +384,49 @@ class Solver(object):
     The solution for an alphabet A is 1 station more than the solution
     to A-chars(s), for all stations s.
     """
-    # Every subset of letters
-    for i, existing in enumerate(self.alphabets):
-      existing_count = self.results[i]
-      # Every choice of next station
-      for station_index, station in enumerate(self.words):
-        if station - existing: # each station must contribute new letters
-          new = self.alphabets.set_to_int(station | existing)
+    for encoded_alphabet in range(self.alphabets.combis):
+      existing_count = self.results[encoded_alphabet]
+      for encoded_word in self.encoded_words:
+        if encoded_word & encoded_alphabet == encoded_alphabet:
+          # We haven't solved the encoded alphabet yet,
+          # but the current word covers it
+          new_count = 1
+        elif existing_count:
+          # The current alphabet is solved, and now we can extend
+          new_count = existing_count + 1
+        else:
+          # We haven't actually found this alphabet, how embarassing!
+          continue
 
-          if station > existing:
-            # The current station provides all letters in the current subset
-            new_count = 1
-          elif existing_count:
-            # Some other words got us the current subset, and now we can extend
-            new_count = existing_count + 1
-          else:
-            # We haven't actually found the "existing" subset, how embarassing!
-            continue
+        new_alphabet = encoded_alphabet | encoded_word
 
-          # If we've already got to this new subset with less stations,
-          # then this set is useless
-          if self.results[new] and self.results[new] < new_count:
-            continue
+        # If we've already got to this new subset with less stations,
+        # then this set is useless.
+        # This will always be the case if the station didn't contribute
+        # any letters.
+        if self.results[new_alphabet] and self.results[new_alphabet] < new_count:
+          continue
 
-          self.results[new] = new_count
-          self.choices[new] = station_index
+        self.results[new_alphabet] = new_count
 
-          if new == self.alphabets.maxint:
-            # Got em all
-            return self.results[new]
+        # This is stupid, should change it to be the new letters only
+        self.choices[new_alphabet] = encoded_word
+
+        if new_alphabet == self.alphabets.maxint:
+          # Got em all
+          return new_count
 
   def rebuild(self, last_seen=None):
     """
     Work out the stations in the solution by examining the results array
     """
     last_seen = last_seen or self.alphabets.maxint
-    alphabet = self.alphabets.int_to_set(last_seen)
     solution = set()
     while last_seen:
       last_choice = self.choices[last_seen]
-      station = self.words[last_choice]
-      solution.add(self.original_words[station])
-      alphabet -= station
-      last_seen = self.alphabets.set_to_int(alphabet)
-    return solution
+      solution.add(last_choice)
+      last_seen -= last_choice
+    return {self.original_words[self.alphabets.int_to_set(i)] for i in solution}
 
 if __name__ == '__main__':
   solver = Solver(stations)
