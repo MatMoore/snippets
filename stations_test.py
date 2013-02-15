@@ -31,14 +31,14 @@ def check_solution(words, expected):
 def test_convert_back():
   solver = stations.Solver(shifted)
   for i in range(255):
-    s = solver.alphabets.int_to_set(i)
-    assert solver.alphabets.set_to_int(s) == i
+    s = solver.alphabets.decode(i)
+    assert solver.alphabets.encode(s) == i
 
 def test_convert_back_unordered():
   solver = stations.Solver(['a', 'c', 'e'])
   for i in range(2**3):
-    s = solver.alphabets.int_to_set(i)
-    assert solver.alphabets.set_to_int(s) == i
+    s = solver.alphabets.decode(i)
+    assert solver.alphabets.encode(s) == i
 
 def test_cases():
   yield check_solution, shifted, set(('abc', 'def', 'ghi'))

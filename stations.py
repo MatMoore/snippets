@@ -341,17 +341,17 @@ class Alphabets(object):
     self.combis = 2 ** self.size   # number of combinations
     self.maxint = self.combis - 1
 
-  def _int_to_set(self, n):
+  def _decode(self, n):
     "Iterate over all letters encoded in n"
     for letter in range(self.size):
       if (1 << letter) & n:
         yield self.alphabet[letter]
 
-  def int_to_set(self, n):
+  def decode(self, n):
     "Set of letters encoded in n"
-    return frozenset(self._int_to_set(n))
+    return frozenset(self._decode(n))
 
-  def set_to_int(self, s):
+  def encode(self, s):
     "Encode a subset of letters as an integer"
     total = 0
     for i, letter in enumerate(self.alphabet):
@@ -359,22 +359,19 @@ class Alphabets(object):
         total |= 1 << i
     return total
 
-  def __iter__(self):
-    # TODO speed this up
-    for i in range(self.combis):
-      yield self.int_to_set(i)
-
 class Solver(object):
+  "Solve/rebuild the solution"
   def __init__(self, words):
     self.original_words = {normalise(word) : word for word in words}
-    self.words = list(self.original_words.keys())
-    self.alphabets = Alphabets(self.words)
+    nwords = self.original_words.keys()
+    self.alphabets = Alphabets(nwords)
+    self.encoded_words = [self.alphabets.encode(word) for word in nwords]
     self.results = array.array('B', (0 for i in range(self.alphabets.combis)))
     self.choices = array.array('I', (0 for i in range(self.alphabets.combis)))
 
-    self.encoded_words = []
-    for word in self.words:
-      self.encoded_words.append(self.alphabets.set_to_int(word))
+  def decode_word(self, encoded_word):
+    "Returns the original word, before normalisation"
+    return self.original_words[frozenset(self.alphabets.decode(encoded_word))]
 
   def solve(self):
     """
@@ -404,7 +401,8 @@ class Solver(object):
         # then this set is useless.
         # This will always be the case if the station didn't contribute
         # any letters.
-        if self.results[new_alphabet] and self.results[new_alphabet] < new_count:
+        if self.results[new_alphabet] and \
+            self.results[new_alphabet] < new_count:
           continue
 
         self.results[new_alphabet] = new_count
@@ -426,7 +424,7 @@ class Solver(object):
       last_choice = self.choices[last_seen]
       solution.add(last_choice)
       last_seen -= last_choice
-    return {self.original_words[self.alphabets.int_to_set(i)] for i in solution}
+    return {self.decode_word(i) for i in solution}
 
 if __name__ == '__main__':
   solver = Solver(stations)
