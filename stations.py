@@ -384,7 +384,7 @@ class Solver(object):
     """
     for encoded_alphabet in range(self.alphabets.combis):
       existing_count = self.results[encoded_alphabet]
-      for encoded_word in self.encoded_words:
+      for word_num, encoded_word in enumerate(self.encoded_words):
         if encoded_word & encoded_alphabet == encoded_alphabet:
           # We haven't solved the encoded alphabet yet,
           # but the current word covers it
@@ -410,7 +410,7 @@ class Solver(object):
 
         # This is stupid, should change it to be the new letters only
         self.removals[new_alphabet] = new_alphabet - encoded_alphabet if new_count > 1 else new_alphabet
-        self.choices[new_alphabet] = encoded_word
+        self.choices[new_alphabet] = word_num
 
         if new_alphabet == self.alphabets.maxint:
           # Got em all
@@ -423,7 +423,7 @@ class Solver(object):
     last_seen = last_seen or self.alphabets.maxint
     solution = set()
     while last_seen:
-      last_choice = self.choices[last_seen]
+      last_choice = self.encoded_words[self.choices[last_seen]]
       removal = self.removals[last_seen]
       solution.add(last_choice)
       last_seen -= removal
