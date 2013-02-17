@@ -13,7 +13,7 @@ def punctuate(words):
 		if result and i not in string.punctuation:
 			result += ' '
 		result += i
-	return string.upper(result)
+	return string.lower(result)+'!'
 
 class Tommy(object):
 
@@ -55,8 +55,11 @@ class Tommy(object):
 		for filename in filenames:
 			text = open(filename,'r')
 			self.analyseText(text)
-		log = open('chatlog.log','r')
-		self.analyseText(log)
+		try:
+			log = open('chatlog.log','r')
+			self.analyseText(log)
+		except IOError:
+			pass
 		self.log = 'chatlog.log'
 
 	def remember(self,token):
@@ -67,7 +70,6 @@ class Tommy(object):
 		# rotate the sequence of words used as the dictionary key
 		self.memory = self.memory[1:]
 		self.memory.append(token)
-
 
 	def analyseText(self,text):
 		'''Analyse a text file'''
@@ -196,55 +198,24 @@ or an empty string, indicating the end of a sentence'''
 
 		# Always respond to your own name
 		if mustRespond or random.random()*100 < RESPOND_PERCENT or (name != self.name and message.lower().find(self.name.lower()) != -1):
-			if random.random()*100 < SPOON_PERCENT:
-				return self.spoon()
-			else:
-				response = self.mangledResponse(message,name)
+			response = self.mangledResponse(message,name)
 
-				# Replace names with the name of whoever spoke last
-				response = re.sub(self.nickRegex,name.upper(),response) # substitute Nick
-				response = re.sub(self.nameRegex,name.upper(),response) # substitute other names
-				return response
+			# Replace names with the name of whoever spoke last
+			response = re.sub(self.nickRegex,name.upper(),response) # substitute Nick
+			response = re.sub(self.nameRegex,name.upper(),response) # substitute other names
+			return response
 
 		return None
 
-	def spoon(self):
-		return '''
--------------
-|      ..    |
-|     (  )   |
-|     \  /   |
-|      ||    |
-|      ||    |
-|      ||    |
-|      []    |
-|____________|
-'''
-
-class SenorWiseau(Tommy):
-	def __init__(self,name='Tommy Wiseau'):
-		Tommy.__init__(self,name,filenames=('spanish.txt',))
-
-	def greet(self,name):
-		greetings = (('Hola',u'señor',name), ('oh', 'hola',u'señor', name))
-
-		return punctuate(random.choice(greetings))
-	
-	def sayBye(self,name):
-		farewells=(('adios',u'señor',name))
-		return punctuate(random.choice(farewells))
-
-
-MARKOV_LENGTH = 2
-RESPOND_PERCENT = 40
-SPOON_PERCENT = 3
+MARKOV_LENGTH = 3
+RESPOND_PERCENT = 5
 MIXUP_PERCENT = 0
 
 if __name__ == '__main__':
 	RESPOND_PERCENT = 100
 
-	tommy = SenorWiseau()
-	print tommy.greet('User')
+	tommy = Tommy(filenames=('phrases.txt',))
+	print tommy.greet('Mark')
 	try:
 		while True:
 			i = raw_input('> ')
@@ -252,6 +223,3 @@ if __name__ == '__main__':
 			print o
 	except EOFError:
 			pass
-#	print tommy.words
-#	print tommy.mangledResponse('you are just chicken')
-#	print tommy.mangledResponse('!!!!')
