@@ -1,0 +1,95 @@
+%!PS-Adobe-3.0
+%%DocumentMedia: A4 595 842 0 () ()
+%%EndComments
+
+%%BeginSetup
+%%BeginFeature: *PageSize A4
+<< /PageSize [595 842] /ImagingBBox null >> setpagedevice
+%%EndFeature
+
+/sqrt3 1.73205081 def
+
+%no. of hexagons per row/column
+/gbrows 9 def
+/gbcolumnpairs 4 def %number of columns / 2
+
+%hexagon size in mm
+/sidelength 14.0 def
+
+%size of the page in mm
+/pagewidth  210 def
+/pageheight 297 def
+
+% size of the board in mm
+/gbwidth gbcolumnpairs sidelength mul 3 mul sidelength add def
+/gbheight gbrows 2 mul 1 add sidelength mul sqrt3 mul 2 div def
+
+%position of lower left corner
+/marginx pagewidth gbwidth sub 2 div def
+/marginy pageheight gbheight sub 2 div def
+
+%1mm in points
+/pttomm 2.845 def
+
+%convert mm into points
+/mm {pttomm mul} def
+
+%make a line at an angle
+/slope {
+    rotate
+    sidelength mm 0 rlineto
+} def
+
+%draw a hexagon with lower left corner at 0,0
+/hex {
+    gsave
+    newpath
+    0 0 moveto
+    sidelength mm 0 rlineto
+    4 {60 slope} repeat
+    closepath
+    stroke
+    grestore
+} def
+
+%draw a column of hexagons
+/hexcolumn {
+    gsave
+    gbrows {
+        hex
+        %0 hexagonheight mm translate
+        -60 rotate
+        -1 sidelength mul mm 0 translate
+        -60 rotate
+        -1 sidelength mul mm 0 translate
+        120 rotate
+    } repeat
+    grestore
+} def
+
+% a pair of columns of hexagons
+/hexcolumns {
+    gsave
+    hexcolumn %first column
+
+    %now stagger the second column
+    sidelength mm 0 translate
+    60 rotate
+    sidelength mm 0 translate
+    -60 rotate %now at the rightmost vertex
+    hexcolumn
+    grestore
+} def
+
+%center the board
+marginx mm marginy mm translate
+
+gsave
+gbcolumnpairs {
+    hexcolumns
+    3 sidelength mul mm 0 translate %every other column lines up
+} repeat
+hexcolumn %final column
+grestore
+
+showpage
